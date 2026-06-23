@@ -1,0 +1,154 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  profile      Profile?
+  quests       Quest[]
+  checkIns     CheckIn[]
+  connectionsA Connection[]  @relation("UserA")
+  connectionsB Connection[]  @relation("UserB")
+  mentorships  Mentorship[]  @relation("Mentor")
+  menteeships  Mentorship[]  @relation("Mentee")
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  summary         String
+  interests       String[]
+  psychAttributes Json
+  talentSignals   String[]
+  onboardingLog   Json?
+  mentorTopics    String[]
+  isMentor        Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model Quest {
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  narrative  String
+  status     QuestStatus @default(ACTIVE)
+  shareId    String?     @unique
+  milestones Milestone[]
+  checkIns   CheckIn[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+enum QuestStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
+model Milestone {
+  id            String          @id @default(cuid())
+  questId       String
+  quest         Quest           @relation(fields: [questId], references: [id], onDelete: Cascade)
+  title         String
+  description   String
+  order         Int
+  estimatedDays Int?
+  status        MilestoneStatus @default(PENDING)
+  tasks         Task[]
+  resources     Resource[]
+  checkIn       CheckIn?
+
+  @@index([questId, order])
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  milestoneId String
+  milestone   Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  title       String
+  completed   Boolean   @default(false)
+  order       Int       @default(0)
+}
+
+model Resource {
+  id          String       @id @default(cuid())
+  milestoneId String
+  milestone   Milestone    @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  title       String
+  url         String
+  type        ResourceType
+  description String?
+}
+
+enum ResourceType {
+  VIDEO
+  ARTICLE
+  COURSE
+  COMMUNITY
+  TOOL
+}
+
+model CheckIn {
+  id              String     @id @default(cuid())
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId         String
+  quest           Quest      @relation(fields: [questId], references: [id], onDelete: Cascade)
+  milestoneId     String?    @unique
+  milestone       Milestone? @relation(fields: [milestoneId], references: [id])
+  moodScore       Int
+  flowScore       Int
+  engagementScore Int
+  summary         String
+  rawLog          Json
+  questAdapted    Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+}
+
+model Connection {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  userA     User     @relation("UserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("UserB", fields: [userBId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userAId, userBId])
+}
+
+model Mentorship {
+  id        String           @id @default(cuid())
+  mentorId  String
+  menteeId  String
+  mentor    User             @relation("Mentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee    User             @relation("Mentee", fields: [menteeId], references: [id], onDelete: Cascade)
+  topic     String
+  status    MentorshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  @@unique([mentorId, menteeId, topic])
+}
+
+enum MentorshipStatus {
+  PENDING
+  ACTIVE
+  ENDED
+}
