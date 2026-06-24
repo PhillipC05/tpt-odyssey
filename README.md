@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TPT Odyssey
 
-## Getting Started
+An open-source AI-driven life-path and mastery engine, built by [TPT Solutions](https://tpt.co.nz).
 
-First, run the development server:
+Users complete a conversational AI intake, receive a personalised quest (narrative arc + milestones + tasks + resources), check in with AI after each milestone, and watch their quest adapt based on their wellbeing. Social features connect peers, mentors, and public quest journeys.
+
+## Features
+
+- **AI onboarding** — conversational intake extracts a psychological profile (Big Five, curiosity type, motivation style, interests, latent talents)
+- **Quest generation** — personalised narrative arc with ordered milestones, tasks, and curated resources
+- **Adaptive check-ins** — AI scores mood, flow, and engagement after each milestone; adjusts remaining milestones when needed
+- **Community** — peer matching by shared interests, mentor discovery, public quest sharing
+- **Self-hostable** — Docker Compose setup with Postgres; no external auth service required
+
+## Tech stack
+
+- [Next.js 15](https://nextjs.org) App Router with React Server Components
+- [Prisma 7](https://www.prisma.io) + PostgreSQL
+- Internal JWT auth (bcryptjs + jose, httpOnly cookie)
+- [OpenRouter](https://openrouter.ai) AI gateway (OpenAI-compatible, model-agnostic)
+- [shadcn/ui v4](https://ui.shadcn.com) + Tailwind CSS v4
+
+## Getting started
+
+### Prerequisites
+
+- Node.js 20+
+- PostgreSQL (or use Docker Compose)
+- An [OpenRouter](https://openrouter.ai) API key
+
+### Environment
+
+Copy `.env.example` to `.env` and fill in the values:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Key variables:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_SECRET` | Random secret for signing session JWTs — generate with `openssl rand -base64 32` |
+| `OPENROUTER_API_KEY` | Your OpenRouter API key |
+| `OPENROUTER_DEFAULT_MODEL` | Model to use, e.g. `anthropic/claude-3.5-sonnet` |
+| `NEXT_PUBLIC_APP_URL` | Public URL of your deployment |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Run locally
 
-## Learn More
+```bash
+npm install
+npx prisma migrate dev --name init
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Run with Docker
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+docker compose up
+```
 
-## Deploy on Vercel
+This starts Postgres and the app. Migrations run automatically on startup. Pass all required env vars via a `.env` file or your Docker environment.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev          # Start dev server
+npm run build        # Production build
+npm run lint         # ESLint
+npx tsc --noEmit     # Type check
+
+npx prisma studio    # Open DB browser
+npx prisma migrate dev --name <name>   # Create a migration
+```
+
+## Project structure
+
+```
+src/
+  app/
+    (auth)/          # Sign-in / sign-up pages
+    (main)/          # Authenticated app (dashboard, quest, profile, community)
+    api/             # API routes (auth, AI, quests, milestones, tasks, community)
+    onboarding/      # AI intake chat
+    q/[shareId]/     # Public read-only quest page
+  components/        # Shared UI components
+  lib/
+    ai/              # OpenRouter client, prompts, Zod schemas
+    auth/            # JWT session utilities
+    db/              # Prisma client singleton
+prisma/
+  schema.prisma      # Data model
+```
+
+## License
+
+Copyright 2026 TPT Solutions. Licensed under the [Apache License, Version 2.0](LICENSE).
