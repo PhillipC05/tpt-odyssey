@@ -6,8 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Users, Star, Globe } from "lucide-react";
+import { Users, Star, Globe, HandHeart } from "lucide-react";
 import Link from "next/link";
+import { RequestMentorshipButton } from "@/components/community/RequestMentorshipButton";
+import { MentorshipActions } from "@/components/community/MentorshipActions";
 
 export default async function CommunityPage() {
   const session = await getSession();
@@ -18,7 +20,7 @@ export default async function CommunityPage() {
 
   const myInterests = profile.interests;
 
-  const [peers, publicQuests] = await Promise.all([
+  const [peers, publicQuests, mentorships] = await Promise.all([
     prisma.user.findMany({
       where: {
         id: { not: session.userId },
@@ -42,9 +44,26 @@ export default async function CommunityPage() {
       orderBy: { updatedAt: "desc" },
       take: 12,
     }),
+    prisma.mentorship.findMany({
+      where: {
+        OR: [{ mentorId: session.userId }, { menteeId: session.userId }],
+      },
+      include: {
+        mentor: { select: { id: true, name: true, avatarUrl: true } },
+        mentee: { select: { id: true, name: true, avatarUrl: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
   const mentors = peers.filter((p) => p.profile?.isMentor);
+  const incomingRequests = mentorships.filter(
+    (m) => m.mentorId === session.userId && m.status === "PENDING"
+  );
+  const outgoingRequests = mentorships.filter(
+    (m) => m.menteeId === session.userId && m.status === "PENDING"
+  );
+  const activeMentorships = mentorships.filter((m) => m.status === "ACTIVE");
 
   return (
     <div className="space-y-6">
@@ -69,6 +88,10 @@ export default async function CommunityPage() {
             <Globe className="h-4 w-4" />
             Public journeys ({publicQuests.length})
           </TabsTrigger>
+          <TabsTrigger value="mentorships" className="gap-2">
+            <HandHeart className="h-4 w-4" />
+            My mentorships ({incomingRequests.length + activeMentorships.length})
+          </TabsTrigger>
         </TabsList>
 
         {/* Peers */}
@@ -90,7 +113,7 @@ export default async function CommunityPage() {
                         <Avatar className="h-10 w-10">
                           {peer.avatarUrl && <AvatarImage src={peer.avatarUrl} />}
                           <AvatarFallback>
-                            {peer.name?.[0] ?? peer.email[0].toUpperCase()}
+                            {peer.name?.[0]?.toUpperCase() ?? "?"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
@@ -142,7 +165,7 @@ export default async function CommunityPage() {
                       <Avatar className="h-10 w-10">
                         {mentor.avatarUrl && <AvatarImage src={mentor.avatarUrl} />}
                         <AvatarFallback>
-                          {mentor.name?.[0] ?? mentor.email[0].toUpperCase()}
+                          {mentor.name?.[0]?.toUpperCase() ?? "?"}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -164,11 +187,107 @@ export default async function CommunityPage() {
                         ))}
                       </div>
                     )}
+                    <RequestMentorshipButton
+                      mentorId={mentor.id}
+                      topic={mentor.profile?.mentorTopics?.[0] ?? "General mentorship"}
+                    />
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* My mentorships */}
+        <TabsContent value="mentorships" className="mt-6 space-y-8">
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Incoming requests
+            </h3>
+            {incomingRequests.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending requests.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {incomingRequests.map((m) => (
+                  <Card key={m.id}>
+                    <CardContent className="pt-5 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          {m.mentee.avatarUrl && <AvatarImage src={m.mentee.avatarUrl} />}
+                          <AvatarFallback>{m.mentee.name?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium text-sm">{m.mentee.name ?? "Traveler"}</p>
+                          <p className="text-xs text-muted-foreground">wants mentorship on {m.topic}</p>
+                        </div>
+                      </div>
+                      <MentorshipActions mentorshipId={m.id} variant="incoming" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Outgoing requests
+            </h3>
+            {outgoingRequests.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No pending requests.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {outgoingRequests.map((m) => (
+                  <Card key={m.id}>
+                    <CardContent className="pt-5 flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        {m.mentor.avatarUrl && <AvatarImage src={m.mentor.avatarUrl} />}
+                        <AvatarFallback>{m.mentor.name?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{m.mentor.name ?? "Mentor"}</p>
+                        <p className="text-xs text-muted-foreground">{m.topic}</p>
+                      </div>
+                      <Badge variant="outline" className="text-xs">Pending</Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              Active mentorships
+            </h3>
+            {activeMentorships.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No active mentorships yet.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {activeMentorships.map((m) => {
+                  const other = m.mentorId === session.userId ? m.mentee : m.mentor;
+                  const role = m.mentorId === session.userId ? "Mentoring" : "Learning from";
+                  return (
+                    <Card key={m.id}>
+                      <CardContent className="pt-5 space-y-3">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            {other.avatarUrl && <AvatarImage src={other.avatarUrl} />}
+                            <AvatarFallback>{other.name?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{other.name ?? "Traveler"}</p>
+                            <p className="text-xs text-muted-foreground">{role} · {m.topic}</p>
+                          </div>
+                        </div>
+                        <MentorshipActions mentorshipId={m.id} variant="active" />
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         {/* Public journeys */}

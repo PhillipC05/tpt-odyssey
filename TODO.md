@@ -69,12 +69,12 @@
 - [x] Add `output: "standalone"` to `next.config.ts` for Docker builds
 
 ### Enhancements (post-MVP)
-- [ ] "New quest" flow — generate an additional quest from existing profile
-- [ ] Mentor opt-in UI — toggle `isMentor` and set `mentorTopics` from profile page
-- [ ] Mentorship request flow — send/accept/decline connections
-- [ ] Notifications — email reminders for inactive quests
-- [ ] Quest abandonment flow with option to restart or pivot
-- [ ] Admin dashboard (for self-hosters) — usage, model config
+- [x] "New quest" flow — generate an additional quest from existing profile
+- [x] Mentor opt-in UI — toggle `isMentor` and set `mentorTopics` from profile page
+- [x] Mentorship request flow — send/accept/decline connections
+- [x] Notifications — email reminders for inactive quests
+- [x] Quest abandonment flow with option to restart or pivot
+- [x] Admin dashboard (for self-hosters) — usage, model config
 - [ ] End-to-end tests (Playwright) for onboarding + quest flow
 - [ ] Accessibility audit
 - [ ] i18n / localization

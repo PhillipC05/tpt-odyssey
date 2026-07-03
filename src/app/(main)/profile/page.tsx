@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Brain, Star, Zap } from "lucide-react";
+import { MentorSettingsCard } from "@/components/profile/MentorSettingsCard";
 
 const CURIOSITY_LABELS: Record<string, string> = {
   explorer: "Explorer — drawn to discovery and new frontiers",
@@ -178,6 +179,11 @@ export default async function ProfilePage() {
           })}
         </CardContent>
       </Card>
+
+      <MentorSettingsCard
+        initialIsMentor={profile.isMentor}
+        initialMentorTopics={profile.mentorTopics}
+      />
     </div>
   );
 }

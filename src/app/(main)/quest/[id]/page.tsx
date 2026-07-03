@@ -11,6 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Circle, Clock, ArrowRight, Share2 } from "lucide-react";
 import { CompleteMilestoneButton } from "@/components/quest/CompleteMilestoneButton";
 import { ShareQuestButton } from "@/components/quest/ShareQuestButton";
+import { AbandonQuestButton } from "@/components/quest/AbandonQuestButton";
 
 export default async function QuestPage({
   params,
@@ -58,7 +59,10 @@ export default async function QuestPage({
             <h1 className="text-2xl font-bold tracking-tight mb-2">{quest.title}</h1>
             <p className="text-muted-foreground leading-relaxed">{quest.narrative}</p>
           </div>
-          <ShareQuestButton questId={quest.id} shareId={quest.shareId} />
+          <div className="flex items-center gap-2 shrink-0">
+            <ShareQuestButton questId={quest.id} shareId={quest.shareId} />
+            {quest.status === "ACTIVE" && <AbandonQuestButton questId={quest.id} />}
+          </div>
         </div>
 
         <div className="mt-4 space-y-1.5">

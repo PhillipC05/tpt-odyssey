@@ -1,9 +1,9 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { generateStructured } from "@/lib/ai/client";
-import { ProfileSchema, QuestSchema, MessagesSchema } from "@/lib/ai/schemas";
+import { ProfileSchema, MessagesSchema } from "@/lib/ai/schemas";
 import { PROFILE_EXTRACTION_PROMPT } from "@/lib/ai/prompts/onboarding";
-import { questGenerationPrompt } from "@/lib/ai/prompts/quest-gen";
+import { generateQuestForUser } from "@/lib/quest/generate";
 
 export async function POST(req: Request) {
   const session = await getSession();
@@ -58,42 +58,12 @@ export async function POST(req: Request) {
   });
 
   // Generate first quest
-  let questData;
+  let quest;
   try {
-    questData = await generateStructured(
-      [{ role: "user", content: questGenerationPrompt(profileData) }],
-      QuestSchema
-    );
+    quest = await generateQuestForUser(session.userId);
   } catch {
     return Response.json({ error: "Failed to generate quest" }, { status: 502 });
   }
-
-  const quest = await prisma.quest.create({
-    data: {
-      userId: session.userId,
-      title: questData.title,
-      narrative: questData.narrative,
-      milestones: {
-        create: questData.milestones.map((m) => ({
-          title: m.title,
-          description: m.description,
-          order: m.order,
-          estimatedDays: m.estimatedDays ?? null,
-          tasks: {
-            create: m.tasks.map((t) => ({ title: t.title, order: t.order })),
-          },
-          resources: {
-            create: m.resources.map((r) => ({
-              title: r.title,
-              url: r.url,
-              type: r.type,
-              description: r.description ?? null,
-            })),
-          },
-        })),
-      },
-    },
-  });
 
   return Response.json({ questId: quest.id });
 }

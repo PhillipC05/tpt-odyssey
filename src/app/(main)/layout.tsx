@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth/session";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { UserMenu } from "@/components/user-menu";
-import { Compass, LayoutDashboard, User, Users } from "lucide-react";
+import { Compass, LayoutDashboard, Shield, User, Users } from "lucide-react";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
+  const isAdmin = session ? isAdminEmail(session.email) : false;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -38,6 +40,15 @@ export default async function MainLayout({ children }: { children: React.ReactNo
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">Profile</span>
               </Link>
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <Shield className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Link>
+              )}
             </nav>
           </div>
           {session && <UserMenu email={session.email} />}

@@ -4,7 +4,7 @@ import { jwtVerify } from "jose";
 import { getSecret } from "@/lib/auth/session";
 
 const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up"];
-const PUBLIC_PREFIXES = ["/q/", "/api/auth/"];
+const PUBLIC_PREFIXES = ["/q/", "/api/auth/", "/api/cron/"];
 
 function isPublic(pathname: string) {
   return (

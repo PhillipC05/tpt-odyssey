@@ -49,6 +49,7 @@ model Quest {
   checkIns   CheckIn[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+  lastReminderAt DateTime?
 
   @@index([userId])
 }
