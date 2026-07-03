@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const ChatMessageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(10_000),
+});
+
+export const MessagesSchema = z.array(ChatMessageSchema).min(1).max(200);
+
 export const ProfileSchema = z.object({
   summary: z.string(),
   interests: z.array(z.string()),

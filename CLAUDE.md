@@ -32,7 +32,7 @@ TPT Odyssey is an open-source AI-driven "life-path and mastery" engine. Users co
 ### Route structure
 ```
 /                          → Landing page (public)
-/sign-in, /sign-up         → Clerk auth pages
+/sign-in, /sign-up         → Internal email+password auth pages
 /onboarding                → AI intake chat → creates Profile + first Quest
 /dashboard                 → Quest card grid; redirects to /onboarding if no Profile
 /quest/[id]                → Quest detail: milestones, tasks, resources

@@ -1,10 +1,9 @@
 import { getSession } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { QuestCard } from "@/components/quest/QuestCard";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Plus } from "lucide-react";
+import { NewQuestButton } from "@/components/quest/NewQuestButton";
+import { Sparkles } from "lucide-react";
 
 export default async function DashboardPage() {
   const session = await getSession();
@@ -46,12 +45,7 @@ export default async function DashboardPage() {
             </p>
           )}
         </div>
-        <Button size="sm" asChild className="shrink-0">
-          <Link href="/api/quests/new">
-            <Plus className="h-4 w-4 mr-1.5" />
-            New quest
-          </Link>
-        </Button>
+        <NewQuestButton label="New quest" />
       </div>
 
       {/* Active quests */}
@@ -73,9 +67,7 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted-foreground mb-4">
             Ready to begin a new journey?
           </p>
-          <Button asChild size="sm">
-            <Link href="/api/quests/new">Start a quest</Link>
-          </Button>
+          <NewQuestButton label="Start a quest" />
         </div>
       )}
 

@@ -1,6 +1,12 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { nanoid } from "nanoid";
+import { z } from "zod";
+
+const PatchQuestSchema = z.object({
+  status: z.enum(["ACTIVE", "COMPLETED", "ABANDONED"]).optional(),
+  share: z.boolean().optional(),
+});
 
 export async function GET(
   _req: Request,
@@ -36,8 +42,18 @@ export async function PATCH(
   if (!session) return new Response("Unauthorized", { status: 401 });
   const { id } = await params;
 
-  const body = await req.json();
-  const { status, share } = body;
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = PatchQuestSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid input" }, { status: 400 });
+  }
+  const { status, share } = parsed.data;
 
   const quest = await prisma.quest.findFirst({ where: { id, userId: session.userId } });
   if (!quest) return new Response("Not found", { status: 404 });

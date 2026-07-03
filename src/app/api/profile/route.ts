@@ -1,7 +1,7 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { generateStructured } from "@/lib/ai/client";
-import { ProfileSchema, QuestSchema } from "@/lib/ai/schemas";
+import { ProfileSchema, QuestSchema, MessagesSchema } from "@/lib/ai/schemas";
 import { PROFILE_EXTRACTION_PROMPT } from "@/lib/ai/prompts/onboarding";
 import { questGenerationPrompt } from "@/lib/ai/prompts/quest-gen";
 
@@ -9,16 +9,33 @@ export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return new Response("Unauthorized", { status: 401 });
 
-  const { messages } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = MessagesSchema.safeParse((body as { messages?: unknown })?.messages);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid messages" }, { status: 400 });
+  }
+  const messages = parsed.data;
+
   const conversationText = messages
-    .map((m: { role: string; content: string }) => `${m.role}: ${m.content}`)
+    .map((m) => `${m.role}: ${m.content}`)
     .join("\n\n");
 
   // Extract profile from conversation
-  const profileData = await generateStructured(
-    [{ role: "user", content: PROFILE_EXTRACTION_PROMPT(conversationText) }],
-    ProfileSchema
-  );
+  let profileData;
+  try {
+    profileData = await generateStructured(
+      [{ role: "user", content: PROFILE_EXTRACTION_PROMPT(conversationText) }],
+      ProfileSchema
+    );
+  } catch {
+    return Response.json({ error: "Failed to generate profile" }, { status: 502 });
+  }
 
   // Save profile
   await prisma.profile.upsert({
@@ -41,10 +58,15 @@ export async function POST(req: Request) {
   });
 
   // Generate first quest
-  const questData = await generateStructured(
-    [{ role: "user", content: questGenerationPrompt(profileData) }],
-    QuestSchema
-  );
+  let questData;
+  try {
+    questData = await generateStructured(
+      [{ role: "user", content: questGenerationPrompt(profileData) }],
+      QuestSchema
+    );
+  } catch {
+    return Response.json({ error: "Failed to generate quest" }, { status: 502 });
+  }
 
   const quest = await prisma.quest.create({
     data: {

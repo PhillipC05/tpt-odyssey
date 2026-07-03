@@ -1,15 +1,20 @@
 import { prisma } from "@/lib/db";
 import { createToken, setSessionCookie } from "@/lib/auth/session";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 const RegisterSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().optional(),
+  password: z.string().min(8).max(200),
+  name: z.string().max(200).optional(),
 });
 
 export async function POST(req: Request) {
+  if (!rateLimit(`register:${getClientIp(req)}`, 5, 60_000)) {
+    return Response.json({ error: "Too many attempts, try again later" }, { status: 429 });
+  }
+
   const body = await req.json();
   const parsed = RegisterSchema.safeParse(body);
   if (!parsed.success) {

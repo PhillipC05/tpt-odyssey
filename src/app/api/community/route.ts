@@ -1,5 +1,11 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const PatchCommunitySchema = z.object({
+  isMentor: z.boolean().optional(),
+  mentorTopics: z.array(z.string()).optional(),
+});
 
 export async function GET() {
   const session = await getSession();
@@ -20,7 +26,10 @@ export async function GET() {
         interests: { hasSome: myInterests },
       },
     },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      avatarUrl: true,
       profile: {
         select: { interests: true, summary: true, isMentor: true, mentorTopics: true },
       },
@@ -54,7 +63,18 @@ export async function PATCH(req: Request) {
   const session = await getSession();
   if (!session) return new Response("Unauthorized", { status: 401 });
 
-  const { isMentor, mentorTopics } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = PatchCommunitySchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid input" }, { status: 400 });
+  }
+  const { isMentor, mentorTopics } = parsed.data;
 
   await prisma.profile.update({
     where: { userId: session.userId },

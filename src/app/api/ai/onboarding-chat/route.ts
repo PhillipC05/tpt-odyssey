@@ -1,18 +1,35 @@
 import { getSession } from "@/lib/auth/session";
 import { streamChat, type Message } from "@/lib/ai/client";
 import { ONBOARDING_SYSTEM_PROMPT } from "@/lib/ai/prompts/onboarding";
+import { MessagesSchema } from "@/lib/ai/schemas";
 
 export async function POST(req: Request) {
   const session = await getSession();
   if (!session) return new Response("Unauthorized", { status: 401 });
 
-  const { messages } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = MessagesSchema.safeParse((body as { messages?: unknown })?.messages);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid messages" }, { status: 400 });
+  }
+
   const allMessages: Message[] = [
     { role: "system", content: ONBOARDING_SYSTEM_PROMPT },
-    ...messages,
+    ...parsed.data,
   ];
 
-  const stream = await streamChat(allMessages);
+  let stream: ReadableStream<string>;
+  try {
+    stream = await streamChat(allMessages);
+  } catch {
+    return Response.json({ error: "AI service unavailable" }, { status: 502 });
+  }
   const encoder = new TextEncoder();
 
   return new Response(

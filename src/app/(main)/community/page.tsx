@@ -24,7 +24,10 @@ export default async function CommunityPage() {
         id: { not: session.userId },
         profile: { interests: { hasSome: myInterests } },
       },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        avatarUrl: true,
         profile: { select: { interests: true, summary: true, isMentor: true, mentorTopics: true } },
         quests: { select: { id: true, status: true } },
       },

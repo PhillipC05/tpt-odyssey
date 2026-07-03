@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 const COOKIE_NAME = "session";
 const EXPIRES_IN = 60 * 60 * 24 * 30; // 30 days in seconds
 
-function getSecret() {
+export function getSecret() {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error("JWT_SECRET is not set");
   return new TextEncoder().encode(secret);

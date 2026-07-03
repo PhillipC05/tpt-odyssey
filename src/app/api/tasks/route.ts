@@ -1,11 +1,28 @@
 import { getSession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import { z } from "zod";
+
+const PatchTaskSchema = z.object({
+  taskId: z.string().min(1),
+  completed: z.boolean(),
+});
 
 export async function PATCH(req: Request) {
   const session = await getSession();
   if (!session) return new Response("Unauthorized", { status: 401 });
 
-  const { taskId, completed } = await req.json();
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = PatchTaskSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid input" }, { status: 400 });
+  }
+  const { taskId, completed } = parsed.data;
 
   // Verify ownership via the task → milestone → quest → user chain
   const task = await prisma.task.findFirst({

@@ -112,7 +112,12 @@ export function ChatInterface({
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-6"
+        role="log"
+        aria-live="polite"
+        aria-label="Conversation"
+      >
         {messages.map((msg, i) => (
           <div
             key={i}

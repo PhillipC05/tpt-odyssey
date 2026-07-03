@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getSecret } from "@/lib/auth/session";
 
-const PUBLIC_PREFIXES = ["/", "/sign-in", "/sign-up", "/q/", "/api/auth/"];
+const PUBLIC_PATHS = ["/", "/sign-in", "/sign-up"];
+const PUBLIC_PREFIXES = ["/q/", "/api/auth/"];
 
 function isPublic(pathname: string) {
-  return PUBLIC_PREFIXES.some(
-    (p) => pathname === p || (p.endsWith("/") && pathname.startsWith(p))
+  return (
+    PUBLIC_PATHS.includes(pathname) ||
+    PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
   );
 }
 
@@ -19,8 +22,7 @@ export async function middleware(req: NextRequest) {
   if (!token) return NextResponse.redirect(new URL("/sign-in", req.url));
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    await jwtVerify(token, secret);
+    await jwtVerify(token, getSecret());
     return NextResponse.next();
   } catch {
     return NextResponse.redirect(new URL("/sign-in", req.url));

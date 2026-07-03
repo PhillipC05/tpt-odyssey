@@ -49,6 +49,8 @@ model Quest {
   checkIns   CheckIn[]
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
+
+  @@index([userId])
 }
 
 enum QuestStatus {
@@ -86,6 +88,8 @@ model Task {
   title       String
   completed   Boolean   @default(false)
   order       Int       @default(0)
+
+  @@index([milestoneId])
 }
 
 model Resource {
@@ -96,6 +100,8 @@ model Resource {
   url         String
   type        ResourceType
   description String?
+
+  @@index([milestoneId])
 }
 
 enum ResourceType {
@@ -121,6 +127,9 @@ model CheckIn {
   rawLog          Json
   questAdapted    Boolean    @default(false)
   createdAt       DateTime   @default(now())
+
+  @@index([userId])
+  @@index([questId])
 }
 
 model Connection {
